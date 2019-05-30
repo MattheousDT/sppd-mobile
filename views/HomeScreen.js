@@ -6,24 +6,28 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
-  TouchableNativeFeedback,
+  TouchableOpacity,
   AsyncStorage,
   ToastAndroid,
-  Button,
   Dimensions,
-  TextInput
+  TextInput,
+  Platform,
+  AlertIOS,
+  RefreshControl
 } from "react-native";
 import { FileSystem, LinearGradient } from "expo";
-import {
-  SimpleLineIcons,
-  FontAwesome,
-  MaterialCommunityIcons
-} from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Drawer from "../components/Drawer";
 
 class HomeScreen extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { isLoading: true, cards: [], devTools: false };
+    this.state = {
+      isLoading: true,
+      cards: [],
+      devTools: false,
+      refreshing: false
+    };
   }
 
   path = FileSystem.documentDirectory;
@@ -45,22 +49,11 @@ class HomeScreen extends React.Component {
   };
 
   static navigationOptions = {
-    title: "Feinwaru SPPD",
-    headerStyle: {
-      backgroundColor: "#1e98a1"
-    },
-    headerTintColor: "#fff",
-    headerTitleStyle: {
-      fontWeight: "bold"
-    },
-    headerRight: (
-      <SimpleLineIcons
-        name="options-vertical"
-        size={20}
-        color="white"
-        style={{ paddingRight: 16, paddingLeft: 16 }}
-      />
-    )
+    title: "Feinwaru SPPD"
+  };
+
+  openSideBar = () => {
+    openDrawer();
   };
 
   downloadShit = async () => {
@@ -78,7 +71,9 @@ class HomeScreen extends React.Component {
             "cards",
             JSON.stringify(responseJson.data.cards)
           );
-          ToastAndroid.show("Cards Downloaded", ToastAndroid.BOTTOM);
+          Platform.OS === "android"
+            ? ToastAndroid.show("Cards Downloaded", ToastAndroid.BOTTOM)
+            : AlertIOS.alert("Cards Downloaded");
 
           //heres where shit gets messy
           for (let i of responseJson.data.cards) {
@@ -93,7 +88,9 @@ class HomeScreen extends React.Component {
                 console.error(error);
               });
           }
-          ToastAndroid.show("Images Downloaded", ToastAndroid.BOTTOM);
+          Platform.OS === "android"
+            ? ToastAndroid.show("Images Downloaded", ToastAndroid.BOTTOM)
+            : AlertIOS.alert("Cards Downloaded");
 
           //end
         } catch (error) {
@@ -109,7 +106,7 @@ class HomeScreen extends React.Component {
     try {
       const value = await AsyncStorage.getItem("cards");
       const cards = await JSON.parse(value);
-
+      ToastAndroid.show("Rendering Cards...", ToastAndroid.LONG);
       this.setState({ cards: cards, isLoading: false });
     } catch (error) {
       console.error("Yeah, Matt did an uwu: ", error);
@@ -130,161 +127,180 @@ class HomeScreen extends React.Component {
     }
   };
 
-  componentDidMount = () => {
-    this.cachedShit();
+  _onRefresh = () => {
+    this.setState({ refreshing: true });
+    this.cachedShit().then(() => {
+      this.setState({ refreshing: false });
+    });
+  };
+
+  componentDidMount = async () => {
+    let cards = await AsyncStorage.getItem("cards");
+    let cardsJson = await JSON.parse(cards);
+
+    if (cardsJson) {
+      this.cachedShit();
+    } else {
+      this.downloadShit().then(() => {
+        this.cachedShit();
+      });
+    }
+  };
+
+  _toggleDevTools = () => {
+    if (this.state.devTools) {
+      this.setState({ devTools: false });
+    } else {
+      this.setState({ devTools: true });
+    }
   };
 
   render() {
     let cardsYay = [];
+    const {navigate} = this.props.navigation;
 
-    cardsYay = this.state.cards.map((e, i) => {
-      return (
-        <View
-          key={i}
-          style={{
-            paddingHorizontal: 8,
-            marginBottom: 24,
-            width: this.window.width / 2
-          }}
-        >
-          <LinearGradient
-            colors={[
-              this.colours[
-                e.rarity === 1
-                  ? "rare"
-                  : e.rarity === 2
-                  ? "epic"
-                  : e.rarity === 3
-                  ? "legendary"
-                  : e.theme
-              ],
-              this.colours[
-                e.rarity === 1
-                  ? "rare"
-                  : e.rarity === 2
-                  ? "epic"
-                  : e.rarity === 3
-                  ? "legendary"
-                  : e.theme
-              ],
-              this.colours[e.theme]
-            ]}
-            locations={[0, 0.299, 0.3]}
+    if (this.state.cards.length === 0) {
+    } else {
+      cardsYay = this.state.cards.map((e, i) => {
+        return (
+          <View
+            key={i}
+            style={{
+              paddingHorizontal: 8,
+              marginBottom: 24,
+              width: this.window.width / 2
+            }}
           >
-            <Image
-              source={{ isStatic: true, uri: this.path + e.image + ".jpg" }}
+            <TouchableOpacity onPress={() => { navigate("Card", e) }}>
+            <LinearGradient
+              colors={[
+                this.colours[
+                  e.rarity === 1
+                    ? "rare"
+                    : e.rarity === 2
+                    ? "epic"
+                    : e.rarity === 3
+                    ? "legendary"
+                    : e.theme
+                ],
+                this.colours[
+                  e.rarity === 1
+                    ? "rare"
+                    : e.rarity === 2
+                    ? "epic"
+                    : e.rarity === 3
+                    ? "legendary"
+                    : e.theme
+                ],
+                this.colours[e.theme]
+              ]}
+              locations={[0, 0.299, 0.3]}
+            >
+              <Image
+                source={{ isStatic: true, uri: this.path + e.image + ".jpg" }}
+                style={{
+                  width: this.window.width / 2 - (16 + 14),
+                  height: this.window.width / 2 - (16 + 14),
+                  margin: 7
+                }}
+                onPress={() => alert("lol")}
+              />
+            </LinearGradient>
+            <Text
               style={{
-                width: this.window.width / 2 - (16 + 14),
-                height: this.window.width / 2 - (16 + 14),
-                margin: 7
+                textAlign: "center",
+                fontWeight: "700",
+                fontSize: 22,
+                marginTop: 8
               }}
-            />
-          </LinearGradient>
-          <Text
-            style={{
-              textAlign: "center",
-              fontWeight: "700",
-              fontSize: 22,
-              marginTop: 8
-            }}
-          >
-            {e.name}
-          </Text>
-          <Text
-            style={{
-              textAlign: "center",
-              fontWeight: "700",
-              fontSize: 18,
-              color: "#707070"
-            }}
-          >
-            {e.rarity === 1
-              ? "Rare"
-              : e.rarity === 2
-              ? "Epic"
-              : e.rarity === 3
-              ? "Legendary"
-              : "Common"}{" "}
-            |{" "}
-            {e.character_type === null
-              ? e.type.charAt(0).toUpperCase() + e.type.slice(1)
-              : e.character_type.charAt(0).toUpperCase() +
-                e.character_type.slice(1)}
-          </Text>
-
-          <Text
-            style={{
-              textAlign: "center",
-              fontWeight: "700",
-              fontSize: 16,
-              marginBottom: 8
-            }}
-          >
-            <Text style={{ color: "#03a9f4" }}>
-              <FontAwesome name="bolt" size={16} />
-              {" " + e.mana_cost}
-            </Text>{" "}
-            <Text style={{ color: "#f44336", marginLeft: 8 }}>
-              <FontAwesome name="heart" size={16} />
-              {" " + e.health}
-            </Text>{" "}
-            <Text style={{ color: "#ff9800", marginLeft: 8 }}>
-              <MaterialCommunityIcons name="sword-cross" size={16} />
-              {" " + e.damage}
+            >
+              {e.name}
             </Text>
-          </Text>
-        </View>
-      );
-    });
+            <Text
+              style={{
+                textAlign: "center",
+                fontWeight: "700",
+                fontSize: 18,
+                color: "#707070"
+              }}
+            >
+              {e.rarity === 1
+                ? "Rare"
+                : e.rarity === 2
+                ? "Epic"
+                : e.rarity === 3
+                ? "Legendary"
+                : "Common"}{" "}
+              |{" "}
+              {e.character_type === null
+                ? e.type.charAt(0).toUpperCase() + e.type.slice(1)
+                : e.character_type.charAt(0).toUpperCase() +
+                  e.character_type.slice(1)}
+            </Text>
+
+            <Text
+              style={{
+                textAlign: "center",
+                fontWeight: "700",
+                fontSize: 16,
+                marginBottom: 8
+              }}
+            >
+              <Text style={{ color: "#03a9f4" }}>
+                <MaterialCommunityIcons name="flash" size={16} />
+                {" " + e.mana_cost}
+              </Text>{" "}
+              <Text style={{ color: "#f44336", marginLeft: 8 }}>
+                <MaterialCommunityIcons name="heart" size={16} />
+                {" " + e.health}
+              </Text>{" "}
+              <Text style={{ color: "#ff9800", marginLeft: 8 }}>
+                <MaterialCommunityIcons name="sword-cross" size={16} />
+                {" " + e.damage}
+              </Text>
+            </Text>
+            </TouchableOpacity>
+          </View>
+        );
+      });
+    }
+
 
     return (
-      <View style={{ flex: 1, paddingTop: 20 }}>
-        <TouchableNativeFeedback
-          onPress={() => {
-            this.downloadShit();
-          }}
-        >
-          <Text>Download Shit</Text>
-        </TouchableNativeFeedback>
-        <TouchableNativeFeedback
-          onPress={() => {
-            this.cachedShit();
-          }}
-        >
-          <Text>Display Cached Shit</Text>
-        </TouchableNativeFeedback>
-        <TouchableNativeFeedback
-          onPress={() => {
-            this.cachedShitDate();
-          }}
-        >
-          <Text>Check date of cached shit</Text>
-        </TouchableNativeFeedback>
-        <View
-          style={{
-            paddingBottom: 18,
-            borderBottomWidth: 5,
-            borderBottomColor: "#1e98a1"
-          }}
-        >
-          <TextInput
+      <View style={{ flex: 1 }}>
+        <Drawer>
+          <View
             style={{
-              height: 48,
-              borderColor: "#c5c5c5",
-              borderWidth: 2,
-              marginHorizontal: 8,
-              paddingHorizontal: 16,
-              borderRadius: 12
+              paddingVertical: 18
             }}
-            //onChangeText={}
-            placeholder={`Search ${this.state.cards.length} cards for...`}
-          />
-        </View>
-        <ScrollView>
-          <View style={{ flex: 1, flexWrap: "wrap", flexDirection: "row" }}>
-            {[cardsYay]}
+          >
+            <TextInput
+              style={{
+                height: 48,
+                borderColor: "#c5c5c5",
+                borderWidth: 2,
+                marginHorizontal: 8,
+                paddingHorizontal: 16,
+                borderRadius: 12,
+                fontSize: 18
+              }}
+              //onChangeText={}
+              placeholder={`Search ${this.state.cards.length} cards for...`}
+            />
           </View>
-        </ScrollView>
+          <ScrollView
+            refreshControl={
+              <RefreshControl
+                refreshing={this.state.refreshing}
+                onRefresh={this._onRefresh}
+              />
+            }
+          >
+            <View style={{ flex: 1, flexWrap: "wrap", flexDirection: "row" }}>
+              {[cardsYay]}
+            </View>
+          </ScrollView>
+        </Drawer>
       </View>
     );
   }

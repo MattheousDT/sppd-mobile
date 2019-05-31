@@ -23,7 +23,10 @@ class LogoTitle extends React.Component {
 const MainNavigator = createStackNavigator({
   Home: {screen: HomeScreen},
   Settings: {screen: Settings},
-  Card: {screen: Card}
+  Card: {screen: Card,
+    navigationOptions: {
+      header: null,
+  }}
 },
 {
   initialRouteName: 'Home',

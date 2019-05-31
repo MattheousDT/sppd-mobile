@@ -15,13 +15,13 @@ class Card extends React.Component {
   };
 
   static navigationOptions = {
-    title: "Card",
+    title: "Card"
   };
 
   render() {
 
     return(
-      <View style={{flex: 1}}>
+      <View style={{flex: 1, marginTop: 20}}>
         <Drawer>
           <View style={{marginHorizontal: 8}}>
             <View style={{width: window.width, borderBottomColor: "#1e98a1", borderBottomWidth: 5}}>
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 20,
     marginTop: 40
-  }
+  },
 });
 
 export default Card;

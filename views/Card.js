@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View, FlatList, ActivityIndicator, Image, Dimensions } from 'react-native';
+import { Constants } from "expo";
 import Drawer from "../components/Drawer";
 
 class Card extends React.Component {
@@ -21,7 +22,7 @@ class Card extends React.Component {
   render() {
 
     return(
-      <View style={{flex: 1, marginTop: 20}}>
+      <View style={{flex: 1, marginTop: Constants.statusBarHeight}}>
         <Drawer>
           <View style={{marginHorizontal: 8}}>
             <View style={{width: window.width, borderBottomColor: "#1e98a1", borderBottomWidth: 5}}>
@@ -32,8 +33,6 @@ class Card extends React.Component {
             <View style={styles.divider} />
             <View style={{marginHorizontal: -8, backgroundColor: "#333", paddingHorizontal: 16, paddingVertical: 8}}>
               <Text style={styles.code}>-card {this.card.name.toLowerCase()}</Text>
-              <Text style={styles.code}>-card {this.card.aliases[0].toLowerCase()}</Text>
-              <Text style={styles.code}>-card {this.card.aliases[1].toLowerCase()}</Text>
             </View>
           </View>
         </Drawer>

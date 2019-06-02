@@ -4,6 +4,7 @@ import {createStackNavigator, createAppContainer} from 'react-navigation';
 import HomeScreen from "./views/HomeScreen";
 import Settings from "./views/Settings";
 import Card from "./views/Card";
+import About from "./views/About"
 
 class LogoTitle extends React.Component {
   render() {
@@ -25,8 +26,12 @@ const MainNavigator = createStackNavigator({
   Settings: {screen: Settings},
   Card: {screen: Card,
     navigationOptions: {
-      header: null,
-  }}
+      header: null
+  }},
+  About: {screen: About,
+    navigationOptions: {
+      header: null
+  }},
 },
 {
   initialRouteName: 'Home',

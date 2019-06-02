@@ -19,6 +19,13 @@ import { FileSystem, LinearGradient } from "expo";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Drawer from "../components/Drawer";
 import BottomDrawer from "../components/BottomDrawer";
+import CardGrid from "../components/CardGrid"
+
+const themes = ["adventure", "fantasy", "general", "mystical", "sci-fi"];
+const rarities = ["common", "rare", "epic", "legendary"];
+const orderBy = ["name", "theme", "rarity", "energy", "health", "damage"];
+
+const capitalism = string => string[0].toUpperCase() + string.slice(1);
 
 class HomeScreen extends React.Component {
   constructor(props) {
@@ -31,28 +38,26 @@ class HomeScreen extends React.Component {
       refreshing: false,
       searchColour: "#c5c5c5",
       search: "",
-      order: "name",
       theme: "",
-      rarity: ""
+      rarity: "",
+      order: 1,
+      sort: "name",
+
+      // faffy dragons cleeeean code
+
+      filters: {
+        name: null,
+        theme: null,
+        rarity: null,
+        sort: "name",
+        order: 1
+      }
     };
   }
-
-  path = FileSystem.documentDirectory;
 
   window = {
     width: Dimensions.get("window").width,
     height: Dimensions.get("window").height
-  };
-
-  colours = {
-    rare: "#BB4600",
-    epic: "#C1C1C1",
-    legendary: "#E9B845",
-    adventure: "#4f80ba",
-    fantasy: "#d34f5f",
-    general: "#857468",
-    mystical: "#4b9b38",
-    "sci-fi": "#db571d"
   };
 
   static navigationOptions = {
@@ -114,7 +119,7 @@ class HomeScreen extends React.Component {
       const value = await AsyncStorage.getItem("cards");
       const cards = await JSON.parse(value);
       ToastAndroid.show("Rendering Cards...", ToastAndroid.LONG);
-      this.setState({ cards: cards, filteredCards: cards, isLoading: false });
+      this.setState({ cards: cards, filteredCards: this.updateCards({ cards }), isLoading: false });
     } catch (error) {
       console.error("Yeah, Matt did an uwu: ", error);
     }
@@ -162,37 +167,6 @@ class HomeScreen extends React.Component {
     }
   };
 
-  filterCards = (s, o, t, r) => {
-    //Set State
-    this.setState({
-      search: s.toLowerCase(),
-      order: o == undefined ? this.state.order : o,
-      theme: t == undefined ? this.state.theme : t,
-      rarity: r == undefined ? this.state.rarity : r
-    });
-
-    //Variables
-    let search = this.state.search;
-    let order = this.state.order
-    let theme = this.state.theme
-    let rarity = this.state.rarity
-    
-    let filteredCards = [];
-
-    //Search Term
-    if (search != ""){
-      filteredCards = this.state.cards.filter(e => {
-        return e.name.toLowerCase().includes(search);
-      });
-    }
-    
-    if (order === "name"){
-      filteredCards.sort((a, b) => (a.name > b.name) ? 1 : -1);
-    }
-
-    this.setState({ filteredCards: filteredCards });
-  };
-
   _searchColour = () => {
     if (this.state.searchColour === "#c5c5c5") {
       this.setState({ searchColour: "#1E98A1" });
@@ -201,120 +175,154 @@ class HomeScreen extends React.Component {
     }
   };
 
-  render() {
-    let cardsYay = [];
-    const { navigate } = this.props.navigation;
+  // dragons nice boii vode ahead...$
 
-    if (this.state.filteredCards.length === 0) {
-    } else {
-      cardsYay = this.state.filteredCards.map((e, i) => {
-        return (
-          <View
-            key={i}
-            style={{
-              paddingHorizontal: 8,
-              marginBottom: 24,
-              width: this.window.width / 2
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => {
-                navigate("Card", e);
-              }}
-            >
-              <LinearGradient
-                colors={[
-                  this.colours[
-                    e.rarity === 1
-                      ? "rare"
-                      : e.rarity === 2
-                      ? "epic"
-                      : e.rarity === 3
-                      ? "legendary"
-                      : e.theme
-                  ],
-                  this.colours[
-                    e.rarity === 1
-                      ? "rare"
-                      : e.rarity === 2
-                      ? "epic"
-                      : e.rarity === 3
-                      ? "legendary"
-                      : e.theme
-                  ],
-                  this.colours[e.theme]
-                ]}
-                locations={[0, 0.299, 0.3]}
-              >
-                <Image
-                  source={{ isStatic: true, uri: this.path + e.image + ".jpg" }}
-                  style={{
-                    width: this.window.width / 2 - (16 + 14),
-                    height: this.window.width / 2 - (16 + 14),
-                    margin: 7
-                  }}
-                  onPress={() => alert("lol")}
-                />
-              </LinearGradient>
-              <Text
-                style={{
-                  textAlign: "center",
-                  fontWeight: "700",
-                  fontSize: 22,
-                  marginTop: 8
-                }}
-              >
-                {e.name}
-              </Text>
-              <Text
-                style={{
-                  textAlign: "center",
-                  fontWeight: "700",
-                  fontSize: 18,
-                  color: "#707070"
-                }}
-              >
-                {e.rarity === 1
-                  ? "Rare"
-                  : e.rarity === 2
-                  ? "Epic"
-                  : e.rarity === 3
-                  ? "Legendary"
-                  : "Common"}{" "}
-                |{" "}
-                {e.character_type === null
-                  ? e.type.charAt(0).toUpperCase() + e.type.slice(1)
-                  : e.character_type.charAt(0).toUpperCase() +
-                    e.character_type.slice(1)}
-              </Text>
+  updateCards = options => {
+    let { cards, filters } = options;
 
-              <Text
-                style={{
-                  textAlign: "center",
-                  fontWeight: "700",
-                  fontSize: 16,
-                  marginBottom: 8
-                }}
-              >
-                <Text style={{ color: "#03a9f4" }}>
-                  {/*<MaterialCommunityIcons name="flash" size={16} />*/}
-                  {" " + e.mana_cost}
-                </Text>{" "}
-                <Text style={{ color: "#f44336", marginLeft: 8 }}>
-                  {/*<MaterialCommunityIcons name="heart" size={16} />*/}
-                  {" " + e.health}
-                </Text>{" "}
-                <Text style={{ color: "#ff9800", marginLeft: 8 }}>
-                  {/*<MaterialCommunityIcons name="sword-cross" size={16} />*/}
-                  {" " + e.damage}
-                </Text>
-              </Text>
-            </TouchableOpacity>
-          </View>
-        );
-      });
+    if (filters == null) {
+      filters = this.state.filters;
+    }
+    if (cards == null) {
+      cards = this.state.cards;
     }
 
+    let filteredCards = cards
+      .filter(
+        e => e.name.toLowerCase().includes((filters.name || "").toLowerCase()) && (filters.theme == null ? true : e.theme === filters.theme) && (filters.rarity == null ? true : e.rarity === filters.rarity)
+      );
+
+    if (filters.sort === "name" || filters.sort === "theme") {
+      filteredCards.sort((a, b) => {
+        if (filters.order === 1) {
+          if (a[filters.sort] < b[filters.sort]) {
+            return -1;
+          }
+          if (a[filters.sort] > b[filters.sort]) {
+            return 1;
+          }
+        } else {
+          if (a[filters.sort] > b[filters.sort]) {
+            return -1;
+          }
+          if (a[filters.sort] < b[filters.sort]) {
+            return 1;
+          }
+        }
+        return 0;
+      });
+    } else {
+      filteredCards.sort((a, b) => 
+        filters.order === 1
+          ? a[filters.sort] - b[filters.sort]
+          : filters.order === -1
+          ? b[filters.sort] - a[filters.sort]
+          : 0
+        );
+    }
+
+
+    this.setState({
+      filteredCards
+    });
+
+    return filteredCards;
+  };
+
+  changeFilter = (filter, value) => {
+    let filters = {};
+
+    if (filter instanceof Object) {
+      for (let [k, v] of Object.entries(filter)) {
+        if (v === "") {
+          filter[k] = null;
+        }
+      }
+      filters = {
+        ...this.state.filters,
+        ...filter
+      };
+    } else {
+      filters = {
+        ...this.state.filters,
+        ...{ [filter]: value === "" ? null : value }
+      };
+    }
+
+    this.updateCards({ filters });
+
+    this.setState({
+      filters
+    });
+  };
+
+  filterTheme = theme => {
+    if (theme === this.state.filters.theme) {
+      return this.changeFilter("theme", null);
+    }
+
+    this.changeFilter("theme", theme);
+  };
+
+  rarityAsNumber = rarity => {
+    switch (rarity) {
+      case "common": {
+        return 0;
+      }
+      case "rare": {
+        return 1;
+      }
+      case "epic": {
+        return 2;
+      }
+      case "legendary": {
+        return 3;
+      }
+    }
+
+    return -1;
+  };
+
+  filterRarity = rarity => {
+    if (this.rarityAsNumber(rarity) === this.state.filters.rarity) {
+      return this.changeFilter("rarity", null);
+    }
+
+    this.changeFilter("rarity", this.rarityAsNumber(rarity));
+  };
+
+  filterName = name => {
+    this.changeFilter("name", name);
+  };
+
+  clearFilterName = () => {
+    this.changeFilter("name", null);
+  };
+
+  toggleSort = sort => {
+    if (this.state.filters.sort == null || this.state.filters.sort !== sort) {
+      this.changeFilter({
+        sort,
+        order: 1
+      });
+    } else {
+      if (this.state.filters.order === 1) {
+        this.changeFilter({
+          sort,
+          order: -1
+        });
+      } else {
+        this.changeFilter({
+          sort: null,
+          order: null
+        });
+      }
+    }
+  };
+
+  //
+
+  render() {
     return (
       <View style={{ flex: 1 }}>
         <Drawer>
@@ -339,8 +347,8 @@ class HomeScreen extends React.Component {
               onEndEditing={() => {
                 this._searchColour();
               }}
-              onChangeText={e => {
-                this.filterCards(e);
+              onChangeText={query => {
+                this.filterName(query); console.log(query)
               }}
               //onChangeText={}
               placeholder={`Search ${this.state.cards.length} cards for...`}
@@ -356,123 +364,101 @@ class HomeScreen extends React.Component {
             style={{ marginBottom: 38 }}
           >
             <View style={{ flex: 1, flexWrap: "wrap", flexDirection: "row" }}>
-              {[cardsYay]}
+              {
+                this.state.filteredCards != undefined ? [
+                this.state.filteredCards.map((e, i) => (
+                  <CardGrid
+                    key={i}
+                    card={e}
+                  />
+                ))
+              ] : null}
             </View>
           </ScrollView>
           <BottomDrawer icon="filter">
             <View style={{ flex: 1, marginHorizontal: 8 }}>
+              {/* Order By */}
               <Text style={{ ...styles.sectionTitle, color: "#ffffff" }}>
                 Order By
               </Text>
               <View style={styles.divider} />
-              <View style={styles.filterItem}>
-                <MaterialCommunityIcons
-                  style={styles.filterItemIcon}
-                  name="sort-descending"
-                  size={16}
-                />
-                <Text style={styles.filterText}>Name</Text>
-              </View>
-              <View style={styles.filterItem}>
-                <MaterialCommunityIcons
-                  style={{ ...styles.filterItemIcon, color: "#00000000" }}
-                  name="sort-descending"
-                  size={16}
-                />
-                <Text style={styles.filterText}>Theme</Text>
-              </View>
-              <View style={styles.filterItem}>
-                <MaterialCommunityIcons
-                  style={{ ...styles.filterItemIcon, color: "#00000000" }}
-                  name="sort-descending"
-                  size={16}
-                />
-                <Text style={styles.filterText}>Energy</Text>
-              </View>
+              {[
+                orderBy.map((e, i) => (
+                  <TouchableOpacity key={i} onPress={() => this.toggleSort(e)}>
+                    <View style={styles.filterItem}>
+                      <MaterialCommunityIcons
+                        style={{
+                          ...styles.filterItemIcon,
+                          color:
+                            this.state.filters.sort === e &&
+                            this.state.filters.order != null
+                              ? "#fff"
+                              : "#00000000"
+                        }}
+                        name={
+                          this.state.filters.order === 1
+                            ? "sort-ascending"
+                            : "sort-descending"
+                        }
+                        size={16}
+                      />
+                      <Text style={{...styles.filterText, color: this.state.filters.sort === e ? "#ffffff" : "#ffffffaa"}}>{capitalism(e)}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              ]}
             </View>
+
+            {/* Themes */}
             <View style={{ flex: 1, marginHorizontal: 8 }}>
               <Text style={{ ...styles.sectionTitle, color: "#ffffff" }}>
                 Theme
               </Text>
               <View style={styles.divider} />
-              <View style={styles.filterItem}>
-                <MaterialCommunityIcons
-                  style={{ ...styles.filterItemIcon, paddingTop: 3 }}
-                  name="circle-outline"
-                  size={10}
-                />
-                <Text style={styles.filterText}>Adventure</Text>
-              </View>
-              <View style={styles.filterItem}>
-                <MaterialCommunityIcons
-                  style={{ ...styles.filterItemIcon, paddingTop: 3 }}
-                  name="circle-outline"
-                  size={10}
-                />
-                <Text style={styles.filterText}>Fantasy</Text>
-              </View>
-              <View style={styles.filterItem}>
-                <MaterialCommunityIcons
-                  style={{ ...styles.filterItemIcon, paddingTop: 3 }}
-                  name="circle-outline"
-                  size={10}
-                />
-                <Text style={styles.filterText}>General</Text>
-              </View>
-              <View style={styles.filterItem}>
-                <MaterialCommunityIcons
-                  style={{ ...styles.filterItemIcon, paddingTop: 3 }}
-                  name="circle-outline"
-                  size={10}
-                />
-                <Text style={styles.filterText}>Mystical</Text>
-              </View>
-              <View style={styles.filterItem}>
-                <MaterialCommunityIcons
-                  style={{ ...styles.filterItemIcon, paddingTop: 3 }}
-                  name="circle-outline"
-                  size={10}
-                />
-                <Text style={styles.filterText}>Sci-Fi</Text>
-              </View>
+              {[
+                themes.map((e, i) => (
+                  <TouchableOpacity key={i} onPress={() => this.filterTheme(e)}>
+                    <View style={styles.filterItem}>
+                      <MaterialCommunityIcons
+                        style={{ ...styles.filterItemIcon, paddingTop: 3, color: this.state.filters.theme === e ? "#ffffff" : "#ffffffaa" }}
+                        name={
+                          this.state.filters.theme === e
+                            ? "circle"
+                            : "circle-outline"
+                        }
+                        size={10}
+                      />
+                      <Text style={{...styles.filterText, color: this.state.filters.theme === e ? "#ffffff" : "#ffffffaa"}}>{capitalism(e)}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              ]}
             </View>
+
+            {/* Rarity */}
             <View style={{ flex: 1, marginHorizontal: 8 }}>
               <Text style={{ ...styles.sectionTitle, color: "#ffffff" }}>
                 Rarity
               </Text>
               <View style={styles.divider} />
-              <View style={styles.filterItem}>
-                <MaterialCommunityIcons
-                  style={{ ...styles.filterItemIcon, paddingTop: 3 }}
-                  name="circle-outline"
-                  size={10}
-                />
-                <Text style={styles.filterText}>Common</Text>
-              </View>
-              <View style={styles.filterItem}>
-                <MaterialCommunityIcons
-                  style={{ ...styles.filterItemIcon, paddingTop: 3 }}
-                  name="circle-outline"
-                  size={10}
-                />
-                <Text style={styles.filterText}>Rare</Text>
-              </View>
-              <View style={styles.filterItem}>
-                <MaterialCommunityIcons
-                  style={{ ...styles.filterItemIcon, paddingTop: 3 }}
-                  name="circle-outline"
-                  size={10}
-                />
-                <Text style={styles.filterText}>Epic</Text>
-              </View>
-              <View style={styles.filterItem}>
-                <MaterialCommunityIcons
-                  style={{ ...styles.filterItemIcon, paddingTop: 3 }}
-                  name="circle-outline"
-                  size={10}
-                />
-                <Text style={styles.filterText}>Legendary</Text>
-              </View>
+              {[
+                rarities.map((e, i) => (
+                  <TouchableOpacity key={i} onPress={() => this.filterRarity(e)}>
+                    <View style={styles.filterItem}>
+                      <MaterialCommunityIcons
+                        style={{ ...styles.filterItemIcon, paddingTop: 3, color: this.state.filters.rarity === this.rarityAsNumber(e) ? "#ffffff" : "#ffffffaa" }}
+                        name={
+                          this.state.filters.rarity === this.rarityAsNumber(e)
+                            ? "circle"
+                            : "circle-outline"
+                        }
+                        size={10}
+                      />
+                      <Text style={{...styles.filterText, color: this.state.filters.rarity === this.rarityAsNumber(e) ? "#ffffff" : "#ffffffaa"}}>{capitalism(e)}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              ]}
             </View>
           </BottomDrawer>
         </Drawer>

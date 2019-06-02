@@ -8,7 +8,8 @@ import {
   ScrollView,
   Dimensions,
   Animated,
-  ToastAndroid
+  ToastAndroid,
+  BackHandler
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -16,7 +17,7 @@ class BottomDrawer extends React.Component {
   constructor(props) {
     super(props);
 
-    this.state = { opened: false, height: new Animated.Value(-241) };
+    this.state = { opened: false, height: new Animated.Value(-281) };
   }
 
   window = {
@@ -28,7 +29,7 @@ class BottomDrawer extends React.Component {
     if (this.state.opened) {
       this.setState({ opened: false });
       Animated.spring(this.state.height, {
-        toValue: -241,
+        toValue: -281,
       }).start();
     } else {
       this.setState({ opened: true });
@@ -39,10 +40,19 @@ class BottomDrawer extends React.Component {
   };
 
   render() {
+
+    BackHandler.addEventListener('hardwareBackPress', () => {
+      if (this.state.opened) {
+        this.openDrawer();
+        return true;
+      }
+      return false;
+    });
+
     return (
       <Animated.View
         style={{
-          height: 286,
+          height: 326,
           width: this.window.width,
           backgroundColor: "#1e98a1",
           zIndex: 998,
@@ -86,39 +96,5 @@ class BottomDrawer extends React.Component {
     );
   }
 }
-
-const styles = StyleSheet.create({
-  sidebarItem: {
-    paddingVertical: 10,
-    flex: 1,
-    flexDirection: "row"
-  },
-  sideBarText: {
-    fontSize: 16,
-    marginTop: -3,
-    fontWeight: "700",
-    color: "#707070"
-  },
-  sidebarItemIcon: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#707070",
-    marginRight: 10
-  },
-  sidebarTitle: {
-    color: "#212529",
-    fontSize: 24,
-    fontWeight: "700"
-  },
-  divider: {
-    height: 5,
-    backgroundColor: "#1E98A1",
-    marginVertical: 16,
-    width: 67
-  },
-  sidebarSection: {
-    marginBottom: 20
-  }
-});
 
 export default BottomDrawer;
